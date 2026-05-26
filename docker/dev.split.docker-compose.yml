@@ -33,6 +33,13 @@ services:
       - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@postgres:5432/langflow
       - LANGFLOW_CONFIG_DIR=/var/lib/langflow
       - LANGFLOW_AUTO_LOGIN=true
+      # LangSmith — map từ LANGSMITH_* trong .env sang LANGCHAIN_* mà Langflow cần
+      - LANGCHAIN_API_KEY=${LANGSMITH_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGSMITH_PROJECT:-Langflow}
+      - LANGCHAIN_ENDPOINT=${LANGSMITH_ENDPOINT}
+      - LANGCHAIN_TRACING_V2=true
+      # Third-party API keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy

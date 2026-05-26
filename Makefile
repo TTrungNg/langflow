@@ -397,6 +397,15 @@ dcdev_up:
 	$(DOCKER) compose -f docker/dev.docker-compose.yml down || true
 	$(DOCKER) compose -f docker/dev.docker-compose.yml up --remove-orphans
 
+dev_up: ## start split dev environment (backend + frontend + postgres)
+	docker compose --env-file .env -f docker/dev.split.docker-compose.yml up -d
+
+dev_down: ## stop split dev environment
+	docker compose --env-file .env -f docker/dev.split.docker-compose.yml down
+
+dev_build: ## build split dev environment images
+	docker compose --env-file .env -f docker/dev.split.docker-compose.yml up --build -d
+
 lock_base:
 	cd src/backend/base && uv lock
 
