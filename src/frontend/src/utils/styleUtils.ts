@@ -525,6 +525,7 @@ export const nodeIconToDisplayIconMap: Record<string, string> = {
   models: "BrainCog",
   helpers: "Wand2",
   vectorstores: "Layers",
+  vision: "ScanEye",
   embeddings: "Binary",
   agents: "Bot",
   chains: "Link",
