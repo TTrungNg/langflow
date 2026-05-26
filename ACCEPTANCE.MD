@@ -144,7 +144,7 @@ Vision Analysis nhận ảnh đã resize (1024px)
 
 ## Node: Image Input
 
-**Status:** `[~] IN PROGRESS`
+**Status:** `[x] DONE`
 
 **Mô tả:** Nhận ảnh upload từ user, validate, resize, convert sang ImageData schema chuẩn hóa.
 
@@ -196,7 +196,7 @@ src/backend/tests/unit/components/vision/fixtures/
 
 ## Node: Vision Analysis
 
-**Status:** `[~] IN PROGRESS`
+**Status:** `[x] DONE`
 
 **Mô tả:** Nhận `List[ImageData]`, gọi Vision API song song, trả về `List[VisionResult]`.
 
@@ -204,10 +204,12 @@ src/backend/tests/unit/components/vision/fixtures/
 
 - `src/lfx/src/lfx/components/vision/vision_analysis.py`
 
-**Tham khảo:** `src/lfx/src/lfx/components/models_and_agents/language_model.py`
-**Import bắt buộc:** `from src.lfx.utils.image import create_image_content_dict`
+**Design decision:** Dùng `ModelInput` + Langflow unified model infrastructure thay vì tự quản lý provider/model list. Lý do:
+- `ModelInput` + `handle_model_input_update()` tự xử lý provider switching, field show/hide, credential resolution từ DB/env
+- `get_llm()` tự chọn đúng LangChain class per provider (`ChatOpenAI`, `ChatAnthropic`, `ChatOllama`...)
+- Nhất quán với toàn bộ Langflow ecosystem, kế thừa provider mới tự động
 
-**System prompt bắt buộc:**
+**System prompt mặc định (có thể sửa trong UI):**
 
 ```
 Analyze the car in the image. Respond ONLY with valid JSON, no explanation:
@@ -224,39 +226,54 @@ Analyze the car in the image. Respond ONLY with valid JSON, no explanation:
 
 **Input/Output:**
 
-- [ ] Nhận: `List[ImageData]` + `system_prompt` (string) + config
-- [ ] Output: `List[VisionResult]` — giữ đúng thứ tự theo index
+- [x] Nhận: `List[ImageData]` + `system_prompt` (string) + config
+- [x] Output: `List[VisionResult]` — giữ đúng thứ tự theo index
+- [x] `images` rỗng → trả về `[]` ngay, không gọi API
 
 **Parallel execution:**
 
-- [ ] Dùng `asyncio.gather()` với `return_exceptions=True`
-- [ ] `max_concurrent` configurable (default: `3`)
-- [ ] Dùng `asyncio.Semaphore(max_concurrent)` để giới hạn concurrent calls
+- [x] Dùng `asyncio.gather()` với `return_exceptions=True`
+- [x] `max_concurrent` configurable (default: `3`)
+- [x] Dùng `asyncio.Semaphore(max_concurrent)` để giới hạn concurrent calls
 
 **Xử lý từng ảnh:**
 
-- [ ] Dùng `create_image_content_dict()` để format message — không tự viết
-- [ ] Gọi với `response_format={"type": "json_object"}` (JSON mode)
-- [ ] Parse JSON response → map vào VisionResult schema
-- [ ] Model name configurable (default: `gpt-4o`)
-- [ ] API key đọc từ LangFlow global Model Providers
+- [x] Format multimodal message dạng `[{"type": "text"}, {"type": "image_url", "image_url": {"url": base64}}]`
+- [x] `response_format` không set ở constructor — model tự format JSON theo system prompt. Lý do: `get_llm()` trả về nhiều loại LangChain class, không phải lúc nào cũng support `response_format` kwarg
+- [x] Parse JSON response → map vào VisionResult schema
+- [x] Xử lý Ollama quirk: model trả về markdown-wrapped JSON (` ```json...``` `) → tự strip trước khi parse
+- [x] Empty response từ model → raise `RuntimeError` với message gợi ý chọn đúng model vision
+
+**Model & API Configuration:**
+
+- [x] Dùng `ModelInput(name="model", real_time_refresh=True)` — Langflow unified model picker
+- [x] Hiển thị tất cả provider có credentials trong Langflow Settings (OpenAI, Anthropic, Google, Ollama, WatsonX...)
+- [x] Provider switching, field show/hide, credential resolution → xử lý tự động bởi `handle_model_input_update()`
+- [x] API key đọc từ LangFlow global providers (Settings → Model Providers) hoặc component-level nếu user nhập trực tiếp
+- [x] `model` trống khi run → raise `ValueError("Model name is required")`
+- [x] Model không support vision (gpt-3.5, embed, whisper...) → hiển thị `⚠️` warning ở component status, vẫn tiếp tục chạy
 
 **Failure handling:**
 
-- [ ] `fail_strategy` configurable: `"skip"` (default) | `"stop"`
-  - `"skip"`: fail → `status: "failed"`, `error: message`, tiếp tục
-  - `"stop"`: fail → raise `RuntimeError`, dừng cả batch
-- [ ] Không nhận ra xe → `brand: null`, `confidence < 0.5`, `status: "success"`
-- [ ] API fail → `status: "failed"`, `error: "<message>"`
+- [x] Fail strategy hardcode `"stop"`: API fail → raise `RuntimeError`, dừng cả batch
+- [x] Không nhận ra xe → `brand: null`, `confidence < 0.5`, `status: "success"` (model trả về null, không phải lỗi)
+- [x] API fail → raise `RuntimeError` với original error message
 
 **Mock để test:**
 
 ```python
-success_mock  = {"brand": "Toyota", "model": "Camry", "color": "White",
+# fixtures/mock_vision_responses.py
+SUCCESS_MOCK  = {"brand": "Toyota", "model": "Camry", "color": "White",
                  "confidence": 0.92, "bbox": {"x": 10, "y": 20, "width": 200, "height": 150}}
-no_car_mock   = {"brand": None, "model": None, "color": None,
+NO_CAR_MOCK   = {"brand": None, "model": None, "color": None,
                  "confidence": 0.3, "bbox": None}
-api_fail_mock = RuntimeError("API rate limit exceeded")
+API_FAIL_MOCK = RuntimeError("API rate limit exceeded")
+
+# Patch target trong tests
+_LLM_PATCH = "lfx.components.vision.vision_analysis.get_llm"
+
+# ModelInput format
+_MODEL_OPENAI = [{"name": "gpt-4o-mini", "provider": "OpenAI", "metadata": {"model_class": "ChatOpenAI"}}]
 ```
 
 ---

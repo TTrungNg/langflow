@@ -6,12 +6,14 @@ from lfx.components._importing import import_mod
 
 if TYPE_CHECKING:
     from lfx.components.vision.image_input import ImageInputComponent
+    from lfx.components.vision.vision_analysis import VisionAnalysisComponent
 
 _dynamic_imports = {
     "ImageInputComponent": "image_input",
+    "VisionAnalysisComponent": "vision_analysis",
 }
 
-__all__ = ["ImageInputComponent"]
+__all__ = ["ImageInputComponent", "VisionAnalysisComponent"]
 
 
 def __getattr__(attr_name: str) -> Any:

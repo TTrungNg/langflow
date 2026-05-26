@@ -47,6 +47,7 @@ class ImageInputComponent(Component):
             display_name="Image List",
             name="images",
             method="process_images",
+            types=["Data"],
         ),
     ]
 
