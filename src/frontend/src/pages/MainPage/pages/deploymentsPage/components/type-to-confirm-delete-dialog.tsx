@@ -51,7 +51,7 @@ export default function TypeToConfirmDeleteDialog({
         <div className="flex flex-col gap-3 pb-3 text-sm">
           <p>
             Permanently delete the deployment <strong>{deploymentName}</strong>{" "}
-            in Langflow and Watsonx Orchestrate.
+            in Vflow and Watsonx Orchestrate.
           </p>
           <label htmlFor="confirm-delete-input" className="text-sm">
             Type the deployment name to confirm:{" "}

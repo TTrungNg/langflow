@@ -1,6 +1,6 @@
 import type { AssistantSuggestion } from "./assistant-panel.types";
 
-export const ASSISTANT_TITLE = "Langflow Assistant";
+export const ASSISTANT_TITLE = "Vflow Assistant";
 
 export const ASSISTANT_SESSION_STORAGE_KEY_PREFIX =
   "langflow-assistant-session-";
@@ -10,7 +10,7 @@ export const ASSISTANT_PLACEHOLDERS = [
   "Build a RAG pipeline...",
   "Create a web scraper component...",
   "Build a document parser...",
-  "Ask me anything about Langflow...",
+  "Ask me anything about Vflow...",
 ];
 
 export function getAssistantPlaceholder(): string {
@@ -34,6 +34,6 @@ export const ASSISTANT_SUGGESTIONS: AssistantSuggestion[] = [
   {
     id: "answer-questions",
     icon: "Sparkles",
-    text: "Answer questions about Langflow",
+    text: "Answer questions about Vflow",
   },
 ];

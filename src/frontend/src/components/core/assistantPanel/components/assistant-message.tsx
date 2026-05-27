@@ -258,7 +258,7 @@ export function AssistantMessageItem({
           <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg">
             <img
               src={langflowAssistantIcon}
-              alt="Langflow Assistant"
+              alt="Vflow Assistant"
               className="h-full w-full object-cover"
             />
           </div>
@@ -270,7 +270,7 @@ export function AssistantMessageItem({
               isUser ? "text-foreground" : "text-accent-pink-foreground",
             )}
           >
-            {isUser ? "User" : "Langflow Assistant"}
+            {isUser ? "User" : "Vflow Assistant"}
           </span>
           <div className="mt-3 overflow-hidden">{renderContent()}</div>
         </div>
