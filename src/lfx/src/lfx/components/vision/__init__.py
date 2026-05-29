@@ -5,15 +5,17 @@ from typing import TYPE_CHECKING, Any
 from lfx.components._importing import import_mod
 
 if TYPE_CHECKING:
+    from lfx.components.vision.image_annotator import ImageAnnotatorComponent
     from lfx.components.vision.image_input import ImageInputComponent
     from lfx.components.vision.vision_analysis import VisionAnalysisComponent
 
 _dynamic_imports = {
+    "ImageAnnotatorComponent": "image_annotator",
     "ImageInputComponent": "image_input",
     "VisionAnalysisComponent": "vision_analysis",
 }
 
-__all__ = ["ImageInputComponent", "VisionAnalysisComponent"]
+__all__ = ["ImageAnnotatorComponent", "ImageInputComponent", "VisionAnalysisComponent"]
 
 
 def __getattr__(attr_name: str) -> Any:
