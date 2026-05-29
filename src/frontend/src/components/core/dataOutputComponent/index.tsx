@@ -5,6 +5,7 @@ import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the 
 import "ag-grid-community/styles/ag-theme-balham.css"; // Optional Theme applied to the grid
 import { useEffect, useState } from "react";
 import { extractColumnsFromRows } from "../../../utils/utils";
+import { ImageCellRenderer } from "./image-cell-renderer";
 
 function DataOutputComponent({
   pagination,
@@ -33,10 +34,21 @@ function DataOutputComponent({
 
   const columns = extractColumnsFromRows(rowsInternal, columnMode);
 
-  const columnDefs = columns.map((col, idx) => ({
-    ...col,
-    resizable: true,
-  })) as (ColDef<any> | ColGroupDef<any>)[];
+  const columnDefs = columns.map((col, idx) => {
+    const colDef: ColDef<any> | ColGroupDef<any> = {
+      ...col,
+      resizable: true,
+    };
+
+    // Add custom cell renderer for file_path columns
+    if (col.field === "file_path") {
+      colDef.cellRenderer = ImageCellRenderer;
+      colDef.autoHeight = true;
+      colDef.minWidth = 350;
+    }
+
+    return colDef;
+  }) as (ColDef<any> | ColGroupDef<any>)[];
 
   return (
     <TableComponent

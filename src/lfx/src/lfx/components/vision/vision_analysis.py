@@ -10,13 +10,14 @@ from lfx.inputs.inputs import IntInput, ModelInput
 from lfx.io import DataInput, MultilineInput, Output
 
 _SYSTEM_PROMPT = """\
-Analyze the car in the image. Respond ONLY with valid JSON, no explanation:
+Analyze the car in the image. Respond ONLY with valid JSON:
 {
   "brand": "string or null",
   "model": "string or null",
   "color": "string or null",
   "confidence": float 0.0-1.0,
-  "bbox": {"x": int, "y": int, "width": int, "height": int} or null
+  "bbox": {"x": int, "y": int, "width": int, "height": int} or null — tight bounding box that MUST enclose the ENTIRE VEHICLE (leftmost to rightmost point, top of roof to bottom of wheels, bumper to bumper),
+  "explanation": "string — describe what visual evidence supports your answer, and any ambiguities or factors that reduce confidence"
 }"""
 
 # Models known to NOT support image input — blocklist intentionally minimal.
@@ -161,8 +162,13 @@ class VisionAnalysisComponent(Component):
 
         async def _analyze_one(img: dict) -> dict:
             async with sem:
+                # Include image dimensions in the prompt so LLM knows the exact bbox space
+                img_width = img.get("resized_width", img.get("original_width", 0))
+                img_height = img.get("resized_height", img.get("original_height", 0))
+                size_context = f"\n[Image size: {img_width}x{img_height} pixels]"
+
                 content = [
-                    {"type": "text", "text": "Analyze this image"},
+                    {"type": "text", "text": f"Analyze this image{size_context}"},
                     {"type": "image_url", "image_url": {"url": img["base64"]}},
                 ]
                 messages = [
@@ -171,17 +177,15 @@ class VisionAnalysisComponent(Component):
                 ]
                 response = await llm.ainvoke(messages)
                 parsed: dict = _extract_json(response.content, img["filename"])
-                return {
-                    "index": img["index"],
-                    "filename": img["filename"],
-                    "brand": parsed.get("brand"),
-                    "model": parsed.get("model"),
-                    "color": parsed.get("color"),
-                    "confidence": float(parsed.get("confidence", 0.0)),
-                    "bbox": parsed.get("bbox"),
-                    "status": "success",
-                    "error": None,
-                }
+                # Pass through all fields from parsed JSON so user-defined fields
+                # in the system prompt (e.g. year, plate) are preserved automatically.
+                result = dict(parsed)
+                result["confidence"] = float(parsed.get("confidence", 0.0))
+                result["index"] = img["index"]
+                result["filename"] = img["filename"]
+                result["status"] = "success"
+                result["error"] = None
+                return result
 
         tasks = [_analyze_one(img) for img in images]
         raw = await asyncio.gather(*tasks, return_exceptions=True)
